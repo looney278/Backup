@@ -1,58 +1,61 @@
 package textualadventuregamegenerator;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import javax.swing.JFileChooser;
 
 public class Save extends javax.swing.JFrame {
 
-    public Save(String storyText, String inventory, String id,
-            String after, String before) throws IOException {
+    String sectionString;
 
-        BufferedReader br = null;
-        FileReader fr = null;
-        String currentLine = "";
-        boolean newDoc = true;
+    /**
+     * Used to save the create games data into a file in the correct format, it
+     * also adds the final xml tag to the file when the game is finished to keep
+     * the files in the correct format
+     *
+     * @param storyText
+     * @param conditions
+     * @param id
+     * @param before
+     * @param finished
+     * @param edit
+     * @param image
+     * @throws IOException
+     */
+    public Save(String storyText, String conditions, String id, String before, boolean finished, boolean edit, String image) throws IOException {
+        //if finished is false write all to variable, if true write all to file
+        //stored in mainwindow to stop rewriting on save initialisation
+        if (finished == false) {
+            sectionString = "\n<story id='" + id
+                    + "'>\n<text>" + storyText + "</text>"
+                    + "\n<conditions>" + conditions + "</conditions>"
+                    + "\n<beforeBranch>" + before + "</beforeBranch>"
+                    + "\n<imageLocation>" + image + "</imageLocation>"
+                    + "\n</story>";
+        } else {
+            final JFileChooser fc = new JFileChooser();
+            fc.setCurrentDirectory(new java.io.File("."));
+            int response = fc.showSaveDialog(Save.this);
 
-        final JFileChooser fc = new JFileChooser();
-        int response = fc.showSaveDialog(Save.this);
-        if (response == JFileChooser.APPROVE_OPTION) {
-            try {
-                if (fc.getSelectedFile().exists() == false) {
-                    fr = new FileReader(fc.getSelectedFile() + ".xml");
-                    br = new BufferedReader(fr);
-                    while ((currentLine = br.readLine()) != null) {
-                        if (currentLine.contains("version")) {
-                            newDoc = false;
+            if (response == JFileChooser.APPROVE_OPTION) {
+                try (FileWriter fw = new FileWriter(fc.getSelectedFile()
+                        + ".xml", false)) {
+                    if (edit == false) {
+                        //write all the stored variables to file
+                        fw.write("<?xml version=\"1.0\"?>\n"
+                                + "<gameFile>"
+                                //gets all save data from main for every area
+                                + MainWindow.getStoryDataText()
+                                + "\n</gameFile>");
 
+                    }
+                    if (edit == true) {
+                        try (FileWriter fwr = new FileWriter(fc.getSelectedFile()
+                                + ".xml", false)) {
+                            fwr.write(storyText);
+                            MainWindow.setOutputs("Edits saved");
                         }
                     }
-                }
-            } catch (IOException e) {
-            }
-            try (FileWriter fw = new FileWriter(fc.getSelectedFile()
-                    + ".xml", true)) {
-
-                //change to work for existing file 
-                //so that xml version doesnt appear and storySection
-                //is moved to the new end of the file
-                if (newDoc == false) {
-                    fw.write("\n<story id='" + id
-                            + "'>\n<text>" + storyText + "</text>"
-                            + "\n<inventory>" + inventory + "</inventory>"
-                            + "\n<afterBranch>" + after + "</afterBranch>"
-                            + "\n<beforeBranch>" + before + "</beforeBranch>"
-                            + "\n</story>\n");
-                } else {
-                    fw.write("<?xml version=\"1.0\"?>\n" + "<storySection>"
-                            + "\n<story id='" + id
-                            + "'>\n<text>" + storyText + "</text>"
-                            + "\n<inventory>" + inventory + "</inventory>"
-                            + "\n<afterBranch>" + after + "</afterBranch>"
-                            + "\n<beforeBranch>" + before + "</beforeBranch>"
-                            + "\n</story>" + "\n</storySection>\n");
                 }
             }
         }

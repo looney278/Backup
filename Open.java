@@ -4,6 +4,10 @@ import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
 import javax.swing.JFileChooser;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -16,47 +20,126 @@ import org.xml.sax.SAXException;
 
 public class Open extends javax.swing.JFrame {
 
-    BufferedReader br = null;
-    FileReader fr = null;
+    public class OpenedData implements Serializable {
 
-    public Open() throws IOException, SAXException, ParserConfigurationException {
-        final JFileChooser fc = new JFileChooser();
+        public boolean accessed = true;
+        public String text = "Error";
+        public String id = "Error";
+        public String conditions = "Error";
+        public String before = "Error";
+        public String image = "Error";
+
+        /**
+         * Constructor for OpenedData object
+         *
+         * @param inputText
+         * @param inputId
+         * @param inputConditions
+         * @param inputBefore
+         * @param inputImage
+         */
+        public OpenedData(String inputText, String inputId, String inputConditions, String inputBefore, String inputImage) {
+            text = inputText;
+            id = inputId;
+            conditions = inputConditions;
+            before = inputBefore;
+            image = inputImage;
+        }
+
+        /**
+         * Returns the objects text data
+         *
+         * @param data
+         * @return data.text
+         */
+        public String getOpenedDataText(OpenedData data) {
+            return data.text;
+        }
+
+        /**
+         * Returns the objects before data
+         *
+         * @param data
+         * @return data.before
+         */
+        public String getBeforeDataText(OpenedData data) {
+            return data.before;
+        }
+
+        /**
+         * Returns the objects id data
+         *
+         * @param data
+         * @return data.id
+         */
+        public String getOpenedDataId(OpenedData data) {
+            return data.id;
+        }
+
+        /**
+         * Returns the objects conditions data
+         *
+         * @param data
+         * @return data.conditions
+         */
+        public String getOpenedDataConditions(OpenedData data) {
+            return data.conditions;
+        }
+        
+        public String getOpenedDataImage(OpenedData data) {
+            return data.image;
+        }
+    }
+    public MainWindow mainwindow;
+    StringBuilder wholeDocument = new StringBuilder();
+    ArrayList<OpenedData> loadedData = new ArrayList<>();
+    public boolean accessed = true;
+
+    /**
+     * Used to select the file needed to play the game and then places its data
+     * into an object that can be read by the Play class
+     *
+     * @throws IOException
+     * @throws SAXException
+     * @throws ParserConfigurationException
+     * @throws InterruptedException
+     * @throws InvocationTargetException
+     * @throws URISyntaxException
+     */
+    public Open() throws IOException, SAXException, ParserConfigurationException, InterruptedException, InvocationTargetException, URISyntaxException {
+        accessed = true;
+        JFileChooser fc = new JFileChooser();
+        fc.setCurrentDirectory(new java.io.File("."));
         int response = fc.showOpenDialog(Open.this);
         if (response == JFileChooser.APPROVE_OPTION) {
-
             File fXmlFile = new File(fc.getSelectedFile().getPath());
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
             Document doc = (Document) dBuilder.parse(fXmlFile);
             doc.getDocumentElement().normalize();
-            
-            System.out.println("Root element :" + doc.getDocumentElement().getNodeName());
-
             NodeList nList = doc.getElementsByTagName("story");
-            
+            BufferedReader br = new BufferedReader(new FileReader(fXmlFile));
+            String line;
+            while ((line = br.readLine()) != null) {
+                wholeDocument.append(line).append("\n");
+            }
             for (int temp = 0; temp < nList.getLength(); temp++) {
-
                 Node nNode = nList.item(temp);
-
-                System.out.println("\nCurrent Element :" + nNode.getNodeName());
-
                 if (nNode.getNodeType() == Node.ELEMENT_NODE) {
-
                     Element eElement = (Element) nNode;
-                    System.out.println("Story id : " + eElement.getAttribute("id"));
-                    System.out.println("Story text : " + eElement.getElementsByTagName("text").item(0).getTextContent());
-                    System.out.println("Inventory : " + eElement.getElementsByTagName("inventory").item(0).getTextContent());
-                    System.out.println("After branch : " + eElement.getElementsByTagName("afterBranch").item(0).getTextContent());
-                    System.out.println("Before branch : " + eElement.getElementsByTagName("beforeBranch").item(0).getTextContent());
-
+                    String text = (eElement.getElementsByTagName("text").item(0).getTextContent());
+                    String id = (eElement.getAttribute("id"));
+                    String conditions = eElement.getElementsByTagName("conditions").item(0).getTextContent();
+                    String before = (eElement.getElementsByTagName("beforeBranch").item(0).getTextContent());
+                    String image = (eElement.getElementsByTagName("imageLocation").item(0).getTextContent());
+                    OpenedData loaded = new OpenedData(text, id, conditions, before, image);
+                    loadedData.add(loaded);
                 }
             }
-            //place each type of section to place
-            //into their correct locations
+            MainWindow.setOutputs("File loaded\n");
         } else {
-            System.out.println("Failed to load file");
+            MainWindow.setOutputs("Failed to load file\n");
         }
-
     }
 
     @SuppressWarnings("unchecked")
